@@ -3,10 +3,6 @@ from server.model.retrieval_model import add_note, get_response
 
 app = Flask(__name__)
 
-answer = [
-    {'answer': ''}
-]
-
 @app.route('/get_response', methods=['POST'])
 def get_response_db():
     json_string = request.get_json()
