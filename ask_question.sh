@@ -8,5 +8,8 @@ fi
 
 QUESTION="$*"
 
-# Send the POST request with the question
-curl -X POST -H "Content-Type: application/json" -d "{\"question\": \"$QUESTION\"}" http://localhost:5000/get_response
+# Send the POST request with the question and capture the response
+RESPONSE=$(curl -s -X POST -H "Content-Type: application/json" -d "{\"question\": \"$QUESTION\"}" http://localhost:5000/get_response)
+
+# Print the response
+echo "$RESPONSE"
