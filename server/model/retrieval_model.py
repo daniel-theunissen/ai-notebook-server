@@ -60,5 +60,6 @@ def get_response(question):
     # Find closest match in the database
     max_val, max_idx = similarities.max(1)
     answer_db = pd.read_csv("database.csv")
+    answer_db = answer_db.reset_index()
     answer = answer_db["Note"][max_idx.item()]
     return answer
