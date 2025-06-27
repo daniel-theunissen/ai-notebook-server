@@ -6,7 +6,7 @@ if [ -f "database.pt" ]; then
     echo "Deleted database.pt"
 else
     echo "database.pt does not exist"
-fi
+fig
 
 # Keep only the first line of database.csv
 if [ -f "database.csv" ]; then

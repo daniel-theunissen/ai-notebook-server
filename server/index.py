@@ -7,8 +7,9 @@ app = Flask(__name__)
 def get_response_db():
     json_string = request.get_json()
     question = json_string["question"]
+    print(f"Recieved Question: {question}")
     response = get_response(question)
-    print(response)
+    print(f"Got Response: {response}")
     return jsonify(response), 200
 
 
@@ -16,7 +17,7 @@ def get_response_db():
 def add_note_db():
     json_string = request.get_json()
     note = json_string["note"]
-    print(note)
+    print(f"Got Note: {note}")
 
     add_note(note)
     
