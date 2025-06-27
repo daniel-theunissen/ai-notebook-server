@@ -24,9 +24,9 @@ def eval_model(truth_table):
         answer = get_response(row['Question'])
         if answer != row['Answer']:
             incorrect = incorrect + 1
-            print(row['Question'])
-            print(answer)
-            print(row['Answer'])
+            print("Query: ", row['Question'], "\n")
+            print("Model response: ", answer, "\n")
+            print("Ground truth: ", row['Answer'], "\n\n")
     total_queries = truth_table_db.shape[0]
     accuracy = ((total_queries - incorrect) / total_queries) * 100
 
