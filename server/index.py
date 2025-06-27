@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request
-from server.model.retrieval_model import add_note, get_response
+from server.model.retrieval_model import add_note, get_response, sync_database
 
 app = Flask(__name__)
 
@@ -11,6 +11,14 @@ def get_response_db():
     response = get_response(question)
     print(f"Got Response: {response}")
     return jsonify(response), 200
+
+@app.route('/sync_database', methods=['POST'])
+def get_client_db():
+    json_string = request.get_json()
+    notes = json_string["notes"]
+    print(notes)
+    sync_database(notes)
+    return '', 200
 
 
 @app.route('/add_note', methods=['POST'])

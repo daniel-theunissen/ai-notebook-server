@@ -39,6 +39,21 @@ def add_note(note):
         torch.save(database, "database.pt")
         return
     
+def sync_database(notes):
+    """
+    Syncs database with the client's notes
+
+    Args:
+        notes (list): A list of notes
+    
+    Returns:
+        none
+    """
+    os.system('./reset_database.sh')
+    for note in notes:
+        add_note(note)
+    return
+    
 def get_response(question):
     """
     Get the closest match in the database to a question
