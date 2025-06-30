@@ -11,6 +11,8 @@ pip install pandas
 pip install numpy
 pip install flask
 pip install pipenv
+pip install python-dotenv
+pip install openai
 ```
 3. Install PyTorch for your platform
 
