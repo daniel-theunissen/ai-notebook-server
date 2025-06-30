@@ -1,80 +1,42 @@
 from sentence_transformers import SentenceTransformer
-import torch
-import pandas as pd
 import numpy as np
-import os
-import csv
 
 # Choose sentence transformer (biencoder) model
 model = SentenceTransformer("multi-qa-mpnet-base-dot-v1")
 
-def add_note(note):
+def encode_sentence(sentence):
     """
-    Adds a new note to the database
+    Encodes a sentence based on a model definition
 
     Args:
-        note (str): String containing the note
+        sentence (str): String containing the sentence to be encoded
 
     Returns:
-        none
+        embedding (list): List containing embedding data
     """
+    # Calculate embedding for sentence
+    embedding = model.encode([sentence]).tolist()  # Convert to list for Firebase compatibility
 
-    # Save text to database
-    with open(r'database.csv','a') as fd:
-                  writer = csv.writer(fd)
-                  writer.writerow([note])
+    return embedding
 
-    # Calculate embedding for note
-    note_embedding = model.encode([note])
 
-    # Create database if it doesn't exist
-    if not os.path.exists("database.pt"):
-        torch.save(note_embedding, "database.pt")
-        return
-        
-    else:
-        # Add new note to database and save
-        database = torch.load("database.pt", weights_only=False)
-        database = np.concatenate((database, note_embedding), axis=0)
-        torch.save(database, "database.pt")
-        return
-    
-def sync_database(notes):
+def get_similarities(question_embedding, note_embeddings):
     """
-    Syncs database with the client's notes
+    Get the list of similarity scores given the question and note embeddings
 
     Args:
-        notes (list): A list of notes
-    
-    Returns:
-        none
-    """
-    os.system('./reset_database.sh')
-    for note in notes:
-        add_note(note)
-    return
-    
-def get_response(question):
-    """
-    Get the closest match in the database to a question
-
-    Args:
-        question (str): String containing the question
+        question_embedding (list): List containing the question embedding data
+        note_embeddings (list): List containing the note embedding data
 
     Returns:
-        answer (str): String containing the answer 
+        similarities (list): List containing the similarity scores 
     """
+    note_embeddings = np.array(note_embeddings, dtype=np.float32)
+    note_embeddings = note_embeddings.reshape(note_embeddings.shape[0], -1)  # Reshape to (n, 768)
 
-    # Calculate quesiton embedding
-    question_embedding = model.encode([question])
-
-    # Load database and compare using dot product similarity
-    database = torch.load("database.pt", weights_only=False)
-    similarities = model.similarity(question_embedding, database)
-
-    # Find closest match in the database
-    max_val, max_idx = similarities.max(1)
-    answer_db = pd.read_csv("database.csv")
-    answer_db = answer_db.reset_index()
-    answer = answer_db["Note"][max_idx.item()]
-    return answer
+    
+    # Calculate similarities
+    similarities = model.similarity(question_embedding, note_embeddings)
+    
+    
+    return similarities

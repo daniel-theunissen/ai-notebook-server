@@ -10,4 +10,10 @@ fi
 NOTE="$*"
 
 # Send the POST request with the note
-curl -X POST -H "Content-Type: application/json" -d "{\"note\": \"$NOTE\"}" http://localhost:5000/add_note
+# curl -X POST -H "Content-Type: application/json" -d "{\"note\": \"$NOTE\"}" http://localhost:5000/add_note
+curl -X POST \
+-H "Content-Type: application/json" \
+-d '{
+    "device_id": "test_user",
+    "note": "'"$NOTE"'"
+}' http://localhost:5000/add_note
