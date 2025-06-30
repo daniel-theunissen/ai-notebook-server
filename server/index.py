@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 import firebase_admin
 from firebase_admin import credentials, db
 from server.model.retrieval_model import encode_sentence, get_similarities
+from server.model.stt_model import speech_to_text
 
 app = Flask(__name__)
 
@@ -106,3 +107,17 @@ def sync_database_db():
             'embedding': note_embedding
         })
     return '', 200
+
+@app.route('/speech_to_text', methods=['POST'])
+def speech_to_text_db():
+    if 'audio' not in request.files:
+        return jsonify({'error': 'No audio file provided'}), 400
+    
+    audio_file = request.files['audio']
+    
+    if audio_file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+    
+    text_result = speech_to_text(audio_file)
+    
+    return jsonify({'text': text_result}), 200
