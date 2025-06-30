@@ -16,10 +16,18 @@ firebase_admin.initialize_app(cred, {
 def add_note_db():
     json_string = request.get_json()
     device_id = json_string.get("device_id")  # Get device ID from the request
+    folder = json_string.get("folder")
+    notebook = json_string.get("notebook")
     note = json_string.get("note")
     
     if not device_id or not note:
         return jsonify({"error": "Device ID and note are required"}), 400
+    
+    if not folder:
+        folder = "default"
+    
+    if not notebook:
+        notebook = "default"
 
     print(f"Got Note: {note} for Device ID: {device_id}")
     note_embedding = encode_sentence(note)
@@ -28,7 +36,9 @@ def add_note_db():
     ref = db.reference(f'notes/{device_id}')
     ref.push({
         'note': note,
-        'embedding': note_embedding
+        'embedding': note_embedding,
+        'folder': folder,
+        'notebook': notebook
     })
 
     return '', 204
@@ -81,7 +91,13 @@ def get_user_notes():
     if notes_data is None:
         return jsonify([]), 200  # Return an empty list if no notes
 
-    notes = [{'note': value['note'], 'id': key} for key, value in notes_data.items()]
+    notes = [{
+        'id': key,
+        'note': value['note'],
+        'folder': value['folder'],
+        'notebook': value['notebook']
+    } for key, value in notes_data.items()]
+    
     return jsonify(notes), 200
 
 @app.route('/sync_database', methods=['POST'])

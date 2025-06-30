@@ -1,19 +1,22 @@
 #!/bin/bash
 
-# Check if a note argument is provided
+# Check if at least one note argument is provided
 if [ "$#" -lt 1 ]; then
-    echo "Usage: $0 <note>"
+    echo "Usage: $0 <note> [notebook] [folder]"
     exit 1
 fi
 
 # Combine all arguments into a single note string
-NOTE="$*"
+NOTE="$1"
+NOTEBOOK="$2"
+FOLDER="$3"
 
-# Send the POST request with the note
-# curl -X POST -H "Content-Type: application/json" -d "{\"note\": \"$NOTE\"}" http://localhost:5000/add_note
+# Send the POST request with the note, notebook, and folder
 curl -X POST \
 -H "Content-Type: application/json" \
 -d '{
     "device_id": "test_user",
-    "note": "'"$NOTE"'"
+    "note": "'"$NOTE"'",
+    "notebook": "'"$NOTEBOOK"'",
+    "folder": "'"$FOLDER"'"
 }' http://localhost:5000/add_note
