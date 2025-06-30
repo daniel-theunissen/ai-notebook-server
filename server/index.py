@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request
-from server.model.retrieval_model_firebase import add_note, get_response, sync_database
+from server.model.retrieval_model import add_note, get_response, sync_database
 
 app = Flask(__name__)
 
