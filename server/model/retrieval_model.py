@@ -2,7 +2,7 @@ from sentence_transformers import SentenceTransformer
 import numpy as np
 
 # Choose sentence transformer (biencoder) model
-model = SentenceTransformer("multi-qa-mpnet-base-dot-v1")
+model = SentenceTransformer("all-mpnet-base-v2")
 
 def encode_sentence(sentence):
     """

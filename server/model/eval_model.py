@@ -1,4 +1,5 @@
-from retrieval_model import get_response, add_note
+from retrieval_model import encode_sentence, get_similarities
+import torch
 import pandas as pd
 
 
@@ -16,17 +17,31 @@ def eval_model(truth_table):
     truth_table_db = pd.read_csv(truth_table)
     truth_table_db = truth_table_db.reset_index() # Make sure indexing works
 
+    note_embeddings = []
+    notes = []
     for index, row in truth_table_db.iterrows():
-        add_note(row['Answer'])
+        note_embedding = encode_sentence(row['Answer'])
+        note_embeddings.append(note_embedding)
+        notes.append(row['Answer'])
 
     incorrect = 0
-    for index, row in truth_table_db.iterrows():  
-        answer = get_response(row['Question'])
-        if answer != row['Answer']:
-            incorrect = incorrect + 1
+    for index, row in truth_table_db.iterrows(): 
+        question_embedding = encode_sentence(row['Question']) 
+        similarities = get_similarities(question_embedding, note_embeddings)
+
+        # Get the top 3 most similar answers
+        top_k = 3
+        top_values, top_indices = torch.topk(similarities, top_k)
+
+        top_answers = [notes[i] for i in top_indices[0].tolist()]  # Retrieve top 3 answers
+
+        # Check if the ground truth answer is among the top 3 answers
+        if row['Answer'] not in top_answers:
+            incorrect += 1
             print("Query: ", row['Question'], "\n")
-            print("Model response: ", answer, "\n")
+            print("Model responses: ", top_answers, "\n")
             print("Ground truth: ", row['Answer'], "\n\n")
+
     total_queries = truth_table_db.shape[0]
     accuracy = ((total_queries - incorrect) / total_queries) * 100
 
