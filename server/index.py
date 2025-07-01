@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request
 import firebase_admin
 from firebase_admin import credentials, db
 import logging
-from server.model.retrieval_model import encode_sentence, get_similarities
+from server.model.retrieval_model import encode_sentence, get_encoding_similarities
 from server.model.stt_model import speech_to_text
 
 app = Flask(__name__)
@@ -96,7 +96,7 @@ def get_response_db():
         notes.append(value['note'])
         note_embeddings.append(value['embedding'])
 
-    similarities = get_similarities(question_embedding, note_embeddings)
+    similarities = get_encoding_similarities(question_embedding, note_embeddings)
     
     # Find closest match in the database
     max_val, max_idx = similarities.max(1)
