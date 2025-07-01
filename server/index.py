@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
 import firebase_admin
 from firebase_admin import credentials, db
+import logging
 from server.model.retrieval_model import encode_sentence, get_similarities
 from server.model.stt_model import speech_to_text
 
@@ -12,6 +13,15 @@ firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://notebookai-79e56-default-rtdb.firebaseio.com/'
 })
 
+# Configure logging
+logging.basicConfig(level=logging.INFO, 
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    handlers=[
+                        logging.FileHandler("app.log"),
+                        logging.StreamHandler()
+                    ])
+logger = logging.getLogger(__name__)
+
 @app.route('/add_note', methods=['POST'])
 def add_note_db():
     json_string = request.get_json()
@@ -21,15 +31,17 @@ def add_note_db():
     note = json_string.get("note")
     
     if not device_id or not note:
+        logger.error("Add Note: Device ID and note are required")
         return jsonify({"error": "Device ID and note are required"}), 400
     
     if not folder:
+        logger.warning("Add Note: Folder not found, assigning default")
         folder = "default"
     
     if not notebook:
+        logger.warning("Add Note: Notebook not found, assigning defualt")
         notebook = "default"
-
-    print(f"Got Note: {note} for Device ID: {device_id}")
+    
     note_embedding = encode_sentence(note)
 
     # Save note and its embedding to Firebase
@@ -41,6 +53,8 @@ def add_note_db():
         'notebook': notebook
     })
 
+    logger.info(f"Added Note: {note} for Device ID: {device_id}")
+
     return '', 204
 
 @app.route('/get_response', methods=['POST'])
@@ -50,19 +64,21 @@ def get_response_db():
     question = json_string.get("question")
     
     if not device_id or not question:
+        logger.error("Ask Question: Device ID and note are required")
         return jsonify({"error": "Device ID and question are required"}), 400
-
-    print(f"Received Question: {question} for Device ID: {device_id}")
-
+    
     # Load all notes from Firebase
     ref = db.reference(f'notes/{device_id}')
     notes_data = ref.get()
 
     if notes_data is None:
+        logger.warning("Ask Question: No note data found, returning empty list")
         return jsonify([]), 200  # Return an empty list if no notes
 
     # Extract embeddings and calculate similarities
     question_embedding = encode_sentence(question)
+
+    logger.info(f"Received Question: {question} for Device ID: {device_id}")
 
     note_embeddings = []
     notes = []
@@ -76,19 +92,22 @@ def get_response_db():
     max_val, max_idx = similarities.max(1)
     answer = notes[max_idx]
 
-    print(f"Got Response: {answer}")
+
+    logger.info(f"Got Response: {answer}")
     return jsonify({"response": answer}), 200
 
 @app.route('/get_user_notes', methods=['GET'])
 def get_user_notes():
     device_id = request.args.get('device_id')  # Get device ID from query parameters
     if not device_id:
+        logger.error("Get User Notes: Device ID is required")
         return jsonify({"error": "Device ID is required"}), 400
 
     ref = db.reference(f'notes/{device_id}')
     notes_data = ref.get()
 
     if notes_data is None:
+        logger.warning("Get User Notes: No note data found, returning empty list")
         return jsonify([]), 200  # Return an empty list if no notes
 
     notes = [{
@@ -97,6 +116,8 @@ def get_user_notes():
         'folder': value['folder'],
         'notebook': value['notebook']
     } for key, value in notes_data.items()]
+
+    logger.info(f"Get User Notes: Got notes for Device ID: {device_id}")
     
     return jsonify(notes), 200
 
@@ -107,9 +128,10 @@ def sync_database_db():
     notes = json_string.get("notes")
     
     if not device_id or not isinstance(notes, list):
+        logger.error("Sync Database: Device ID and notes list are required")
         return jsonify({"error": "Device ID and notes list are required"}), 400
 
-    print(f"Syncing notes for Device ID: {device_id}")
+    logger.info(f"Sync Database: Syncing notes for Device ID: {device_id}")
     
     # Clear existing notes in Firebase
     ref = db.reference(f'notes/{device_id}')
@@ -127,11 +149,13 @@ def sync_database_db():
 @app.route('/speech_to_text', methods=['POST'])
 def speech_to_text_db():
     if 'audio' not in request.files:
+        logger.error("STT: No audio file provided")
         return jsonify({'error': 'No audio file provided'}), 400
     
     audio_file = request.files['audio']
     
     if audio_file.filename == '':
+        logger.error("STT: No file selected")
         return jsonify({'error': 'No file selected'}), 400
     
     text_result = speech_to_text(audio_file)
