@@ -1,8 +1,10 @@
-from sentence_transformers import SentenceTransformer
+from sentence_transformers import SentenceTransformer, CrossEncoder
 import numpy as np
 
 # Choose sentence transformer (biencoder) model
-model = SentenceTransformer("all-mpnet-base-v2")
+biencoder_model = SentenceTransformer("all-mpnet-base-v2")
+# Choose a cross-encoder model
+cross_encoder_model = CrossEncoder('cross-encoder/ms-marco-MiniLM-L6-v2')
 
 def encode_sentence(sentence):
     """
@@ -15,12 +17,12 @@ def encode_sentence(sentence):
         embedding (list): List containing embedding data
     """
     # Calculate embedding for sentence
-    embedding = model.encode([sentence]).tolist()  # Convert to list for Firebase compatibility
+    embedding = biencoder_model.encode([sentence]).tolist()  # Convert to list for Firebase compatibility
 
     return embedding
 
 
-def get_similarities(question_embedding, note_embeddings):
+def get_encoding_similarities(question_embedding, note_embeddings):
     """
     Get the list of similarity scores given the question and note embeddings
 
@@ -29,14 +31,29 @@ def get_similarities(question_embedding, note_embeddings):
         note_embeddings (list): List containing the note embedding data
 
     Returns:
-        similarities (list): List containing the similarity scores 
+        similarities (Tensor): List containing the similarity scores 
     """
     note_embeddings = np.array(note_embeddings, dtype=np.float32)
     note_embeddings = note_embeddings.reshape(note_embeddings.shape[0], -1)  # Reshape to (n, 768)
 
     
     # Calculate similarities
-    similarities = model.similarity(question_embedding, note_embeddings)
+    similarities = biencoder_model.similarity(question_embedding, note_embeddings)
     
     
     return similarities
+
+def get_cross_encoder_similarities(query, memos):
+    """
+    Run the cross encoder on a query and a set of memos, outputting a similarity to the query score for each memo.
+
+    Args:
+        query (str): The query to be compared with each memo.
+        memos (list of str): Each memo to be compared with the query.
+
+    Returns:
+        (numpy.ndarray) The similarity to query score for each memo. (1 x num_memos)
+    """
+    scores = cross_encoder_model.predict([(query, memo) for memo in memos])
+    return scores
+
