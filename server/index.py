@@ -44,8 +44,18 @@ def add_note_db():
     
     note_embedding = encode_sentence(note)
 
-    # Save note and its embedding to Firebase
+    # FIXME: Duplicate notes are not always unintentional, maybe make some type of time threshold between requests?
     ref = db.reference(f'notes/{device_id}')
+    try:
+        existing_notes = ref.order_by_child('note').equal_to(note).get()
+    except Exception as e:
+        logger.error(f"Error checking for existing notes: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
+
+    if existing_notes:
+        logger.warning(f"Add Note: Duplicate note found for Device ID: {device_id}")
+        return jsonify({"error": "Duplicate note found"}), 409  # Conflict status code
+
     ref.push({
         'note': note,
         'embedding': note_embedding,
@@ -161,3 +171,17 @@ def speech_to_text_db():
     text_result = speech_to_text(audio_file)
     
     return jsonify({'text': text_result}), 200
+
+@app.route('/delete_notes/<device_id>', methods=['DELETE'])
+def delete_notes(device_id):
+    # Reference to the notes for the specific device ID
+    ref = db.reference(f'notes/{device_id}')
+    
+    # Attempt to delete the notes
+    try:
+        ref.delete()  # This will delete all entries under the specified device ID
+        logger.info(f"Deleted all notes for Device ID: {device_id}")
+        return jsonify({"message": "All notes deleted successfully"}), 204  # No Content status
+    except Exception as e:
+        logger.error(f"Error deleting notes for Device ID: {device_id}: {str(e)}")
+        return jsonify({"error": "Failed to delete notes"}), 500  # Internal Server Error
