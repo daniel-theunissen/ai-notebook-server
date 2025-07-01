@@ -5,13 +5,14 @@ import pandas as pd
 
 def eval_model(truth_table):
     """
-    Calculate model accuracy given a truth table
+    Calculate model accuracy given a truth table of memos and corresponding queries.
 
     Args:
-        truth_table: filepath to truth table csv in Answer,Question format
+        truth_table (str): filepath to truth table csv in Answer,Question format.
 
     Returns:
-        accuracy (float): percent accuracy of the model on the truth table
+        top1_accuracy (float): percent of the time the model's top choice is correct.
+        top3_accuracy (float): percent of the time one of the model's top three choices is correct.
     """
 
     truth_table_db = pd.read_csv(truth_table)
@@ -24,7 +25,8 @@ def eval_model(truth_table):
         note_embeddings.append(note_embedding)
         notes.append(row['Answer'])
 
-    incorrect = 0
+    top3_incorrect = 0
+    top1_incorrect = 0
     for index, row in truth_table_db.iterrows(): 
         question_embedding = encode_sentence(row['Question']) 
         similarities = get_similarities(question_embedding, note_embeddings)
@@ -37,17 +39,23 @@ def eval_model(truth_table):
 
         # Check if the ground truth answer is among the top 3 answers
         if row['Answer'] not in top_answers:
-            incorrect += 1
+            top3_incorrect += 1
             print("Query: ", row['Question'], "\n")
             print("Model responses: ", top_answers, "\n")
             print("Ground truth: ", row['Answer'], "\n\n")
 
+        # Check if the ground truth answer is the model's top answer
+        if row['Answer'] != top_answers[0]:
+            top1_incorrect += 1
+
     total_queries = truth_table_db.shape[0]
-    accuracy = ((total_queries - incorrect) / total_queries) * 100
+    top3_accuracy = ((total_queries - top3_incorrect) / total_queries) * 100
+    top1_accuracy = ((total_queries - top1_incorrect) / total_queries) * 100
 
-    return accuracy
+    return top1_accuracy, top3_accuracy
 
 
-accuracy = eval_model('server/model/initial_training_data_notetaker.csv')
-print(f'Accuracy: {accuracy}')
+top1_accuracy, top3_accuracy = eval_model('server/model/initial_training_data_notetaker.csv')
+print(f'% top choices correct: {top1_accuracy}')
+print(f'% correct answer in top 3 choices: {top3_accuracy}')
 
