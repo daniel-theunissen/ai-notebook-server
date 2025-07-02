@@ -18,5 +18,5 @@ done
 NOTES_JSON=$(IFS=,; echo "[${NOTES_ARRAY[*]}]")
 
 # Send the POST request with the notes
-curl -X POST -H "Content-Type: application/json" -d "{\"notes\": $NOTES_JSON}" http://localhost:5000/sync_database
+curl -X POST -H "Content-Type: application/json" -d "{"device_id": "test_user", \"notes\": $NOTES_JSON}" http://localhost:5000/sync_database
 
