@@ -15,7 +15,7 @@ firebase_admin.initialize_app(cred, {
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, 
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    format='[%(asctime)s] - %(name)s - %(levelname)s - %(message)s',
                     handlers=[
                         logging.FileHandler("app.log"),
                         logging.StreamHandler()
@@ -30,6 +30,8 @@ def add_note_db():
     notebook = json_string.get("notebook")
     note = json_string.get("note")
     
+    logger.info("\n")
+
     if not device_id or not note:
         logger.error("Add Note: Device ID and note are required")
         return jsonify({"error": "Device ID and note are required"}), 400
@@ -63,7 +65,7 @@ def add_note_db():
         'notebook': notebook
     })
 
-    logger.info(f"Added Note: {note} for Device ID: {device_id}")
+    logger.info(f"{device_id} Added Note: '{note}'")
 
     return '', 204
 
@@ -88,7 +90,8 @@ def get_response_db():
     # Extract embeddings and calculate similarities
     question_embedding = encode_sentence(question)
 
-    logger.info(f"Received Question: {question} for Device ID: {device_id}")
+    logger.info("\n")
+    logger.info(f"{device_id} Asked Question: '{question}'")
 
     note_embeddings = []
     notes = []
@@ -103,12 +106,15 @@ def get_response_db():
     answer = notes[max_idx]
 
 
-    logger.info(f"Got Response: {answer}")
+    logger.info(f"{device_id} Got Response: '{answer}'")
     return jsonify({"response": answer}), 200
 
 @app.route('/get_user_notes', methods=['GET'])
 def get_user_notes():
     device_id = request.args.get('device_id')  # Get device ID from query parameters
+
+    logger.info("\n")
+
     if not device_id:
         logger.error("Get User Notes: Device ID is required")
         return jsonify({"error": "Device ID is required"}), 400
@@ -136,6 +142,8 @@ def sync_database_db():
     json_string = request.get_json()
     device_id = json_string.get("device_id")  # Get device ID from the request
     notes = json_string.get("notes")
+
+    logger.info("\n")
     
     if not device_id or not isinstance(notes, list):
         logger.error("Sync Database: Device ID and notes list are required")
@@ -158,6 +166,9 @@ def sync_database_db():
 
 @app.route('/speech_to_text', methods=['POST'])
 def speech_to_text_db():
+
+    logger.info("\n")
+
     if 'audio' not in request.files:
         logger.error("STT: No audio file provided")
         return jsonify({'error': 'No audio file provided'}), 400
@@ -176,6 +187,8 @@ def speech_to_text_db():
 def delete_notes(device_id):
     # Reference to the notes for the specific device ID
     ref = db.reference(f'notes/{device_id}')
+
+    logger.info("\n")
     
     # Attempt to delete the notes
     try:
